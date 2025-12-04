@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="vi" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bio-Karma: Giải Mã Cơ Chế Sinh Học Nhân Quả</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        tech: ['Orbitron', 'sans-serif'],
+                    },
+                    colors: {
+                        'bio-bg': '#F0F4F8',       /* Light Blue-Grey Background */
+                        'bio-panel': '#FFFFFF',    /* White Panels */
+                        'text-main': '#1e293b',    /* Dark Slate Text */
+                        'text-muted': '#64748b',   /* Muted Text */
+                        'tech-blue': '#2563eb',    /* Stronger Blue for light mode */
+                    },
+                    boxShadow: {
+                        'soft': '0 4px 20px rgba(0, 0, 0, 0.05)', /* Soft shadow */
+                        'glow-bad': '0 0 10px rgba(239, 68, 68, 0.3)',
+                        'glow-good': '0 0 10px rgba(16, 185, 129, 0.3)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { background-color: #F0F4F8; color: #1e293b; }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #F0F4F8; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+        /* Scanning Line Animation - Adjusted for Light Mode */
+        .scan-line {
+            position: absolute;
+            width: 100%;
+            height: 2px;
+            background: rgba(37, 99, 235, 0.3);
+            animation: scan 3s linear infinite;
+        }
+
+        @keyframes scan {
+            0% { top: 0%; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
+
+        /* Heartbeat Animation */
+        .heartbeat { animation: beat 1s infinite; }
+        @keyframes beat {
+            0% { transform: scale(1); }
+            15% { transform: scale(1.1); }
+            30% { transform: scale(1); }
+            45% { transform: scale(1.1); }
+            60% { transform: scale(1); }
+        }
+        .heartbeat-stress { animation: beat 0.4s infinite; } 
+
+        /* Toggle Switch */
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #10b981;
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #10b981;
+        }
+        
+        .chart-wrapper {
+            position: relative;
+            height: 250px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header class="border-b border-slate-200 bg-white/80 backdrop-blur-md sticky top-0 z-50 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-dna text-tech-blue text-2xl"></i>
+                <div>
+                    <h1 class="font-tech text-xl text-slate-800 tracking-wider">PROJECT BIO-KARMA</h1>
+                    <p class="text-xs text-slate-500">Giải Mã Cơ Chế Sinh Học Của Thiện & Ác</p>
+                </div>
+            </div>
+            <div class="hidden md:block text-xs text-slate-500 font-mono bg-slate-100 px-3 py-1 rounded-full">
+                SYSTEM STATUS: <span class="text-green-600 font-bold animate-pulse">ONLINE</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Controller Section -->
+    <section class="py-10 px-4">
+        <div class="max-w-7xl mx-auto">
+            
+            <!-- Control Panel -->
+            <div class="bg-bio-panel border border-slate-200 rounded-3xl p-8 mb-10 shadow-soft relative overflow-hidden">
+                <!-- Decorative top gradient -->
+                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-blue-400 to-transparent opacity-30"></div>
+                
+                <div class="text-center mb-10">
+                    <h2 class="text-2xl font-bold text-slate-800 mb-2">MÔ PHỎNG TRẠNG THÁI CƠ THỂ</h2>
+                    <p class="text-slate-500 mb-8">Gạt cần để xem phản ứng sinh học thay đổi như thế nào</p>
+                    
+                    <!-- The Big Switch -->
+                    <div class="flex items-center justify-center gap-6 bg-slate-50 inline-flex px-8 py-4 rounded-full border border-slate-200 shadow-inner">
+                        <span class="text-red-500 font-bold text-lg transition-all duration-300 opacity-50" id="label-bad">NHÂN ÁC (Stress)</span>
+                        
+                        <div class="relative inline-block w-20 h-10 align-middle select-none transition duration-200 ease-in">
+                            <input type="checkbox" name="toggle" id="karma-toggle" class="toggle-checkbox absolute block w-8 h-8 rounded-full bg-white border-4 appearance-none cursor-pointer top-1 left-1 transition-all duration-300 z-10 shadow-md"/>
+                            <label for="karma-toggle" class="toggle-label block overflow-hidden h-10 rounded-full bg-slate-300 cursor-pointer transition-colors duration-300"></label>
+                        </div>
+                        
+                        <span class="text-slate-400 font-bold text-lg transition-all duration-300 opacity-50" id="label-good">NHÂN LÀNH (Heal)</span>
+                    </div>
+                </div>
+
+                <!-- Dashboard Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    
+                    <!-- Panel 1: Brain Chemistry (Ý) -->
+                    <div class="bg-white rounded-2xl p-6 border border-slate-100 shadow-soft relative group hover:shadow-lg transition-shadow">
+                        <h3 class="font-tech text-tech-blue text-sm mb-4 border-b border-slate-100 pb-2 font-bold">
+                            <i class="fa-solid fa-brain mr-2"></i> NÃO BỘ & HÓA CHẤT (Ý)
+                        </h3>
+                        <div class="chart-wrapper">
+                            <canvas id="brainChart"></canvas>
+                        </div>
+                        <div class="mt-4 text-sm text-slate-600 bg-slate-50 p-3 rounded-lg" id="brain-text">
+                            <!-- Dynamic Content -->
+                        </div>
+                    </div>
+
+                    <!-- Panel 2: Vagus Nerve & Heart (Khẩu) -->
+                    <div class="bg-white rounded-2xl p-6 border border-slate-100 shadow-soft relative hover:shadow-lg transition-shadow">
+                        <h3 class="font-tech text-tech-blue text-sm mb-4 border-b border-slate-100 pb-2 font-bold">
+                            <i class="fa-solid fa-heart-pulse mr-2"></i> TIM MẠCH & LỜI NÓI (KHẨU)
+                        </h3>
+                        <div class="flex flex-col items-center justify-center h-[200px]">
+                            <div class="relative">
+                                <div class="absolute inset-0 bg-red-100 rounded-full scale-150 opacity-20 animate-pulse"></div>
+                                <i class="fa-solid fa-heart text-6xl mb-4 transition-all duration-300 relative z-10" id="heart-icon"></i>
+                            </div>
+                            <div class="text-4xl font-mono font-bold tracking-tighter" id="hr-display">-- BPM</div>
+                            <div class="text-xs text-slate-400 mt-2 font-semibold">BIẾN THIÊN NHỊP TIM (HRV)</div>
+                        </div>
+                        <div class="mt-4 text-sm text-slate-600 bg-slate-50 p-3 rounded-lg" id="heart-text">
+                            <!-- Dynamic Content -->
+                        </div>
+                    </div>
+
+                    <!-- Panel 3: Epigenetics (Thân) -->
+                    <div class="bg-white rounded-2xl p-6 border border-slate-100 shadow-soft relative hover:shadow-lg transition-shadow">
+                        <h3 class="font-tech text-tech-blue text-sm mb-4 border-b border-slate-100 pb-2 font-bold">
+                            <i class="fa-solid fa-dna mr-2"></i> TẾ BÀO & BIỂU SINH (THÂN)
+                        </h3>
+                        <div class="flex justify-center items-center h-[200px] relative">
+                            <!-- DNA Animation Placeholder -->
+                            <div class="w-full h-6 bg-slate-200 rounded-full overflow-hidden relative shadow-inner">
+                                <div id="immune-bar" class="h-full bg-slate-500 w-1/2 transition-all duration-1000 relative overflow-hidden">
+                                    <div class="absolute inset-0 bg-white/20 w-full h-full animate-[scan_2s_linear_infinite]"></div>
+                                </div>
+                            </div>
+                            <div class="absolute inset-0 flex flex-col justify-center items-center">
+                                <span class="text-2xl font-bold drop-shadow-md" id="immune-status" style="text-shadow: 0 1px 2px rgba(0,0,0,0.1);">Trung Tính</span>
+                                <span class="text-xs text-slate-500 mt-1 font-semibold bg-white/80 px-2 py-0.5 rounded-full backdrop-blur-sm">HỆ MIỄN DỊCH (NK Cells)</span>
+                            </div>
+                        </div>
+                        <div class="mt-4 text-sm text-slate-600 bg-slate-50 p-3 rounded-lg" id="body-text">
+                            <!-- Dynamic Content -->
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Deep Dive Analysis Sections -->
+            <div class="space-y-16">
+                
+                <!-- Section 1: Ý (Mind) -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
+                    <div class="space-y-4">
+                        <span class="text-tech-blue font-bold text-xs tracking-widest uppercase">Phân Tích Chuyên Sâu #01</span>
+                        <h2 class="text-3xl font-bold text-slate-800">Cơ Chế Của "Ý": [Image of Amygdala in brain] <br>Nhà Máy Hóa Chất</h2>
+                        <div class="p-5 bg-white rounded-xl border-l-4 border-red-500 shadow-sm">
+                            <h4 class="font-bold text-red-600">Khi Gieo Nhân Ác (Tham/Sân)</h4>
+                            <p class="text-slate-600 text-sm mt-2 leading-relaxed">Hạch hạnh nhân kích hoạt chế độ "Chiến đấu". Tuyến thượng thận bơm <strong>Cortisol</strong>. Cơ thể tự đầu độc chính mình bằng stress mãn tính.</p>
+                        </div>
+                        <div class="p-5 bg-white rounded-xl border-l-4 border-green-500 shadow-sm">
+                            <h4 class="font-bold text-green-600">Khi Gieo Nhân Lành (Từ Bi)</h4>
+                            <p class="text-slate-600 text-sm mt-2 leading-relaxed">Vỏ não trước trán [Image of Prefrontal Cortex activity] kích hoạt. Não tiết <strong>Oxytocin & Serotonin</strong>. Cơ thể đi vào trạng thái chữa lành và tái tạo.</p>
+                        </div>
+                    </div>
+                    <div class="bg-white p-2 rounded-2xl border border-slate-200 shadow-soft h-80 relative overflow-hidden">
+                         <div class="absolute inset-0 flex items-center justify-center bg-slate-50">
+                            <!-- Placeholder visual -->
+                            <div class="text-center opacity-20">
+                                <i class="fa-solid fa-brain text-9xl text-slate-800"></i>
+                            </div>
+                            <div class="absolute inset-0 scan-line"></div>
+                        </div>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <div class="text-center bg-white/90 p-6 rounded-2xl shadow-lg backdrop-blur-sm border border-slate-100">
+                                <div class="text-4xl mb-2">🧠</div>
+                                <div class="font-tech text-tech-blue font-bold">HOẠT ĐỘNG THẦN KINH</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 2: Khẩu (Speech) -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
+                    <div class="order-2 md:order-1 bg-white p-6 rounded-2xl border border-slate-200 shadow-soft h-80 flex items-center justify-center relative">
+                        <div class="absolute top-4 left-4 text-xs font-mono text-slate-400 font-bold">VAGUS NERVE STIMULATION</div>
+                         <!-- Abstract Waveform Visualization -->
+                        <div class="flex items-end gap-1.5 h-40 w-full justify-center px-10" id="voice-waves">
+                            <!-- JS will generate bars here -->
+                        </div>
+                    </div>
+                    <div class="order-1 md:order-2 space-y-4">
+                        <span class="text-tech-blue font-bold text-xs tracking-widest uppercase">Phân Tích Chuyên Sâu #02</span>
+                        <h2 class="text-3xl font-bold text-slate-800">Cơ Chế Của "Khẩu": [Image of Vagus Nerve anatomy] <br>Sóng Rung Động</h2>
+                        <p class="text-slate-600">Lời nói tác động trực tiếp lên <strong>Dây thần kinh phế vị</strong> - cầu nối giữa não và các cơ quan nội tạng.</p>
+                        <ul class="space-y-4 mt-4">
+                            <li class="flex items-start gap-4 bg-white p-4 rounded-lg shadow-sm border border-slate-100">
+                                <div class="bg-red-100 p-2 rounded-full"><i class="fa-solid fa-bolt text-red-500"></i></div>
+                                <div>
+                                    <strong class="text-slate-800 block mb-1">Nói dối (Cognitive Load)</strong>
+                                    <span class="text-slate-500 text-sm">Não phải làm việc gấp đôi để duy trì kịch bản giả. Gây căng thẳng thần kinh và mất ngủ.</span>
+                                </div>
+                            </li>
+                            <li class="flex items-start gap-4 bg-white p-4 rounded-lg shadow-sm border border-slate-100">
+                                <div class="bg-green-100 p-2 rounded-full"><i class="fa-solid fa-music text-green-500"></i></div>
+                                <div>
+                                    <strong class="text-slate-800 block mb-1">Ái ngữ (Resonance)</strong>
+                                    <span class="text-slate-500 text-sm">Âm điệu trầm ấm kích hoạt hệ thần kinh đối giao cảm, giúp tim đập chậm và tiêu hóa tốt.</span>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Section 3: Thân (Action) -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
+                    <div class="space-y-4">
+                        <span class="text-tech-blue font-bold text-xs tracking-widest uppercase">Phân Tích Chuyên Sâu #03</span>
+                        <h2 class="text-3xl font-bold text-slate-800">Cơ Chế Của "Thân": <br>Tế Bào Gương & Biểu Sinh</h2>
+                        <div class="grid grid-cols-1 gap-4">
+                            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition">
+                                <h4 class="font-tech text-tech-blue font-bold mb-2 text-sm uppercase">Mirror Neurons (Tế Bào Gương)</h4>
+                                <p class="text-sm text-slate-600">Khi bạn làm đau người khác, não bộ của bạn cũng mô phỏng lại nỗi đau đó. Về mặt thần kinh học, <strong>làm ác là tự làm đau chính mình</strong>.</p>
+                            </div>
+                            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition">
+                                <h4 class="font-tech text-tech-blue font-bold mb-2 text-sm uppercase">Epigenetics (Biểu Sinh Di Truyền)</h4>
+                                <p class="text-sm text-slate-600">Lối sống từ bi có thể "bật" các gen bảo vệ cơ thể (kháng viêm, chống ung thư) và "tắt" các gen gây bệnh.</p>
+                            </div>
+                        </div>
+                    </div>
+                     <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-soft h-80 flex flex-col items-center justify-center relative overflow-hidden group">
+                        <div class="absolute inset-0 bg-slate-50 opacity-50 group-hover:opacity-30 transition"></div>
+                        <i class="fa-solid fa-dna text-7xl text-slate-300 mb-6 group-hover:scale-110 transition-transform duration-500"></i>
+                        <div class="text-center relative z-10">
+                            <h3 class="text-slate-800 font-bold text-lg">DNA METHYLATION</h3>
+                            <p class="text-xs text-slate-500 mt-2 bg-white px-3 py-1 rounded-full shadow-sm">Gen của bạn đang lắng nghe hành động của bạn.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Summary Table -->
+            <div class="mt-20 mb-10">
+                <div class="bg-white rounded-3xl shadow-soft overflow-hidden border border-slate-200">
+                    <div class="bg-slate-50 p-6 border-b border-slate-200 text-center">
+                        <h2 class="text-xl font-bold text-slate-800 font-tech tracking-wide">TỔNG KẾT DỮ LIỆU BIO-KARMA</h2>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-white text-slate-400 text-xs uppercase tracking-wider border-b border-slate-100">
+                                    <th class="p-5 font-semibold">Cấp Độ</th>
+                                    <th class="p-5 font-semibold">Hành Vi (Nhân)</th>
+                                    <th class="p-5 font-semibold">Phản Ứng Sinh Học Tức Thời (Quả Trên Thân)</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-slate-600 text-sm">
+                                <tr class="border-b border-slate-100 hover:bg-slate-50 transition">
+                                    <td class="p-5 font-bold text-slate-800">THÂN</td>
+                                    <td class="p-5"><span class="text-red-500 font-medium bg-red-50 px-2 py-1 rounded">Sát sanh</span> vs <span class="text-green-600 font-medium bg-green-50 px-2 py-1 rounded">Bảo vệ</span></td>
+                                    <td class="p-5">Viêm mãn tính (Cortisol) vs Tăng tế bào miễn dịch NK</td>
+                                </tr>
+                                <tr class="border-b border-slate-100 hover:bg-slate-50 transition">
+                                    <td class="p-5 font-bold text-slate-800">KHẨU</td>
+                                    <td class="p-5"><span class="text-red-500 font-medium bg-red-50 px-2 py-1 rounded">Nói dối</span> vs <span class="text-green-600 font-medium bg-green-50 px-2 py-1 rounded">Chân thật</span></td>
+                                    <td class="p-5">Rối loạn nhịp tim (Low HRV) vs Thư giãn sâu (Vagus Nerve)</td>
+                                </tr>
+                                <tr class="hover:bg-slate-50 transition">
+                                    <td class="p-5 font-bold text-slate-800">Ý</td>
+                                    <td class="p-5"><span class="text-red-500 font-medium bg-red-50 px-2 py-1 rounded">Tham/Sân</span> vs <span class="text-green-600 font-medium bg-green-50 px-2 py-1 rounded">Từ Bi</span></td>
+                                    <td class="p-5">Teo hồi hải mã (Mất trí nhớ) vs Phát triển thùy trán (Trí tuệ)</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-200 bg-white py-10 text-center">
+        <p class="text-slate-500 text-xs font-bold tracking-wide mb-2">PHÂN TÍCH DỰA TRÊN NGHIÊN CỨU KHOA HỌC THẦN KINH & TÁC PHẨM "SỐNG MƯỜI ĐIỀU LÀNH"</p>
+        <p class="text-slate-400 text-xs">&copy; 2023 BIO-KARMA PROJECT</p>
+    </footer>
+
+    <script>
+        // --- DATA & CONFIG ---
+        const badState = {
+            brainData: [90, 10, 80, 20], // Cortisol, Oxytocin, Adrenaline, Serotonin
+            brainText: "Hạch hạnh nhân phì đại. Vỏ não trước trán bị ức chế. Tư duy ngắn hạn, bốc đồng.",
+            heartRate: 110,
+            heartText: "Nhịp tim nhanh, hỗn loạn. Biến thiên nhịp tim (HRV) thấp. Nguy cơ đột quỵ.",
+            immuneLevel: 20, 
+            immuneText: "Hệ miễn dịch suy yếu. Tắt gen bảo vệ. Tế bào lão hóa nhanh.",
+            color: '#ef4444', // Red 500
+            bg: '#fee2e2' // Red 100
+        };
+
+        const goodState = {
+            brainData: [15, 90, 20, 85], 
+            brainText: "Vỏ não trước trán kích hoạt. Sáng suốt, bình tĩnh. Hồi hải mã phát triển (trí nhớ tốt).",
+            heartRate: 65,
+            heartText: "Nhịp tim ổn định, sâu. Biến thiên nhịp tim (HRV) cao. Trạng thái thư giãn sâu.",
+            immuneLevel: 95, 
+            immuneText: "Tăng cường tế bào NK (diệt ung thư). Bật gen chống viêm. Tái tạo tế bào.",
+            color: '#10b981', // Emerald 500
+            bg: '#d1fae5' // Emerald 100
+        };
+
+        // --- CHART SETUP ---
+        const ctxBrain = document.getElementById('brainChart').getContext('2d');
+        
+        // Light mode chart config
+        Chart.defaults.color = '#64748b'; // Slate 500 for text
+        Chart.defaults.borderColor = '#e2e8f0'; // Slate 200 for grid lines
+
+        const brainChart = new Chart(ctxBrain, {
+            type: 'bar',
+            data: {
+                labels: ['Cortisol (Stress)', 'Oxytocin (Love)', 'Adrenaline (Fear)', 'Serotonin (Peace)'],
+                datasets: [{
+                    label: 'Mức độ Hormone',
+                    data: [50, 50, 50, 50],
+                    backgroundColor: [
+                        'rgba(239, 68, 68, 0.8)', // Cortisol - Red
+                        'rgba(16, 185, 129, 0.8)', // Oxytocin - Green
+                        'rgba(245, 158, 11, 0.8)', // Adrenaline - Orange
+                        'rgba(59, 130, 246, 0.8)'  // Serotonin - Blue
+                    ],
+                    borderColor: 'rgba(255,255,255,0.5)',
+                    borderWidth: 2,
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { 
+                        beginAtZero: true, 
+                        max: 100, 
+                        grid: { borderDash: [2, 4], color: '#f1f5f9' }, 
+                        ticks: { display: false } 
+                    },
+                    x: { 
+                        grid: { display: false }, 
+                        ticks: { font: { size: 10, weight: 'bold' } } 
+                    }
+                },
+                plugins: { legend: { display: false } }
+            }
+        });
+
+        // --- INTERACTION LOGIC ---
+        const toggle = document.getElementById('karma-toggle');
+        const labelBad = document.getElementById('label-bad');
+        const labelGood = document.getElementById('label-good');
+        
+        // DOM Elements to update
+        const brainText = document.getElementById('brain-text');
+        const heartIcon = document.getElementById('heart-icon');
+        const hrDisplay = document.getElementById('hr-display');
+        const heartText = document.getElementById('heart-text');
+        const immuneBar = document.getElementById('immune-bar');
+        const immuneStatus = document.getElementById('immune-status');
+        const bodyText = document.getElementById('body-text');
+
+        function updateDashboard(isGood) {
+            const data = isGood ? goodState : badState;
+
+            // 1. Update Switch UI Labels
+            if(isGood) {
+                labelGood.classList.remove('opacity-50', 'text-slate-400');
+                labelGood.classList.add('opacity-100', 'text-green-600');
+                labelBad.classList.add('opacity-50', 'text-slate-400');
+                labelBad.classList.remove('opacity-100', 'text-red-500');
+            } else {
+                labelBad.classList.remove('opacity-50', 'text-slate-400');
+                labelBad.classList.add('opacity-100', 'text-red-500');
+                labelGood.classList.add('opacity-50', 'text-slate-400');
+                labelGood.classList.remove('opacity-100', 'text-green-600');
+            }
+
+            // 2. Update Brain Chart
+            brainChart.data.datasets[0].data = data.brainData;
+            brainChart.update();
+            brainText.innerHTML = `<span style="color:${data.color}; font-weight:bold;">●</span> ${data.brainText}`;
+
+            // 3. Update Heart Panel
+            heartIcon.style.color = data.color;
+            // Removed drop-shadow for cleaner light mode look, or use subtle one
+            // heartIcon.style.filter = `drop-shadow(0 0 5px ${data.color}40)`; 
+            
+            if(isGood) {
+                heartIcon.classList.remove('heartbeat-stress');
+                heartIcon.classList.add('heartbeat');
+            } else {
+                heartIcon.classList.remove('heartbeat');
+                heartIcon.classList.add('heartbeat-stress');
+            }
+            hrDisplay.innerText = `${data.heartRate} BPM`;
+            hrDisplay.style.color = data.color;
+            heartText.innerHTML = `<span style="color:${data.color}; font-weight:bold;">●</span> ${data.heartText}`;
+
+            // 4. Update Immune/Body Panel
+            immuneBar.style.width = `${data.immuneLevel}%`;
+            immuneBar.style.backgroundColor = data.color;
+            immuneStatus.innerText = isGood ? "Mạnh Mẽ (High)" : "Suy Yếu (Low)";
+            immuneStatus.style.color = data.color;
+            bodyText.innerHTML = `<span style="color:${data.color}; font-weight:bold;">●</span> ${data.immuneText}`;
+            
+            // 5. Update Voice Waves Visuals
+            const voiceContainer = document.getElementById('voice-waves');
+            voiceContainer.innerHTML = '';
+            const barCount = 30;
+            const baseColorClass = isGood ? 'bg-green-400' : 'bg-red-400';
+            
+            for(let i=0; i<barCount; i++) {
+                const bar = document.createElement('div');
+                bar.className = `w-1.5 rounded-full ${baseColorClass} opacity-80 transition-all duration-500`;
+                
+                let h;
+                if(isGood) {
+                    // Smooth harmonic wave
+                    h = 30 + Math.sin(i * 0.4) * 20 + 'px'; 
+                } else {
+                    // Spiky jagged wave
+                    h = 10 + Math.random() * 80 + 'px'; 
+                }
+                bar.style.height = h;
+                voiceContainer.appendChild(bar);
+            }
+        }
+
+        // Initialize
+        toggle.addEventListener('change', (e) => {
+            updateDashboard(e.target.checked);
+        });
+
+        // Set default to "Bad" (unchecked) on load
+        updateDashboard(false); 
+
+    </script>
+</body>
+</html>
